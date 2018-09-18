@@ -1,9 +1,0 @@
-#put below scripts in /bin/my_update.sh
-
-apt-get update -y >> /var/log/update_script.log
-apt-get upgrate -y >> /var/log/update_script.log
-
-#then make it excutable chmod 705 /bin/update.sh
-#then use command crontab -e type below input
-
-0 4 * * 1 /bin/my_update.sh

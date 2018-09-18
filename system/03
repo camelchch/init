@@ -1,1 +1,22 @@
-we need to edit the file:  /etc/hostname
+1.Edit the file 
+
+/etc/hostname
+
+2.Delete the exsting name and replace it with a new name:
+
+Newname
+
+3.Save and close the file. You may also need to edit the /etc/hosts file, enter:
+
+# vim /etc/hosts
+
+4.Find all references to server1 and replace with Newname:
+
+127.0.0.1    localhost
+127.0.1.1    Newname
+
+5.Save and close the file. Please note that the host name is usually set once at system startup in /etc/init.d/hostname.sh (normally by reading the contents of a file which contains the host name, e.g. /etc/hostname). Just type the following command to apply new changes without rebooting the server:
+
+# /etc/init.d/hostname.sh start
+OR
+# invoke-rc.d hostname.sh start
