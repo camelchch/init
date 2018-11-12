@@ -15,8 +15,8 @@ Newname
 127.0.0.1    localhost
 127.0.1.1    Newname
 
-5.Save and close the file. Please note that the host name is usually set once at system startup in /etc/init.d/hostname.sh (normally by reading the contents of a file which contains the host name, e.g. /etc/hostname). Just type the following command to apply new changes without rebooting the server:
+#5.Save and close the file. Please note that the host name is usually set once at system startup in /etc/init.d/hostname.sh (normally by reading the contents of a file which contains the host name, e.g. /etc/hostname). Just type the following command to apply new changes without rebooting the server:
 
 # /etc/init.d/hostname.sh start
-OR
+#OR
 # invoke-rc.d hostname.sh start
