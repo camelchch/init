@@ -1,13 +1,22 @@
-#command: nslookup 42.fr
-#OR
-#dig 42.fr
+#nslookup 42.fr
+#/!\ ne donne pas l’IP publique mais interne de 42.fr (car on est dessus) ! /!\
+#ex:10.52.1.76
 
-server:10.51.1.42
-Address:10.51.1.42#53
+#Pour avoir l’IP publique, il faut passer par le DNS Google :
+#nslookup 42.fr 8.8.8.8
+#ex: 163.172.250.12
 
-Name:42.fr
-Address: 10.52.1.12
-Name:42.fr
-Address: 10.52.1.76
-Name:42.fr
-Address: 10.52.1.11	
+#/!\ le sujet demande la sortie de commande ! /!\
+#nslookup 42.fr 8.8.8.8 > 09
+
+Server:		8.8.8.8
+Address:	8.8.8.8#53
+
+Non-authoritative answer:
+Name:	42.fr
+Address: 163.172.250.12
+Name:	42.fr
+Address: 163.172.250.11
+Name:	42.fr
+Address: 163.172.250.13
+

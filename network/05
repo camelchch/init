@@ -1,1 +1,1 @@
-nslookup slash16.org
+lookup slash16.org | grep Server | cut -f 3
