@@ -1,0 +1,3 @@
+cat /etc/passwd | cut -d: -f1
+#getent passwd | cut -d: -f1    all users not only local
+#this command above will get all the users   with /etc/passwd data will only get the local users

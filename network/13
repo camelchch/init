@@ -1,6 +1,4 @@
-#host 10.51.1.253
-
-it's a DHCP server.
+lookup 10.11.12.12 | grep name | cut -d ' ' -f3
 
 #A DHCP server is used to issue unique IP addresses and automatically configure other network information. In most homes and small businesses, the router acts as the DHCP server. In large networks, a single computer might act as the DHCP server.
 

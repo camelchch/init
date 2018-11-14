@@ -1,4 +1,7 @@
 inat-1 (10.60.1.11)
 
 #Network address translation (NAT) is a method of remapping one IP address space into another by modifying network address information in the IP header of packets while they are in transit across a traffic routing device.
-
+#  “10.11.254.254 is our local network\n”
+# “the link between the l.n. and outside world is made by a device called NAT, for Network Address Translation\n”
+# “following the traceroute command, the line 2 represents the device used after the local network\n”
+# “in our case, the name device is “nat-1" and its IP Address is (10.60.1.11)\n”

@@ -1,0 +1,566 @@
+
+rk
+
+01 Afficher juste les noms des interfaces réseaux :
+
+ifconfig -l
+
+MAN : The -l flag may be used to list all available interfaces on the system, with no other additional information.
+
+ip -br a | cut -d’ ‘ -f1
+
+ip : équivalent de ifconfig
+-br : brief information, réduit sensiblement le nombre d’information affiché
+a : raccourci pour address
+
+cut: couper une partie du mot/fichier
+-d’ ‘ : utilise ‘ ‘ comme délimiteur de coupe
+-f1 : coupe le premier champ
+
+02 Afficher les caractéristiques d’une interface réseau spécifique (ex: Ethernet):
+	ifconfig en0         [nom du réseaux]
+	ip addr show en0
+
+	Pour info, voici la liste des interfaces (mac):
+		-lo0 : boucle locale, localhost, pile TCP/IP locale
+	-gif0 : tunnel générique IPv4 vers IPv6
+	-stf0 : tunnel IPv6 vers IPv4 (ces deux dernières interfaces sont faits pour faciliter la transition)
+	  -en0 /en1 : Ethernet (câblé) / AirPort (wifi)
+	-bridged0 : un pont quelconque entre deux interfaces, possiblement du VM
+	  -p2p0 : interface pour AirDrop (le p2p apple)
+	  -awdl0 : Apple Wireless Direct Link, connexion p2p Apple utilisant le WiFi, avec faible latence/haute vitesse. Utilisé avec notamment: AirDrop, GameKit (qui utilise aussi Bluetooth), AirPlay, et surement d’autres.
+	  -utun0 : Back to My Mac. La fonctionnalité iCloud “Accès à mon Mac” vous permet de vous connecter à vos autres ordinateurs Mac via Internet, de manière sécurisée, dixit Apple.
+	  -fw0 : FireWire network interface.
+
+
+	  X Afficher juste l’adresse IP de l’interface Ethernet :
+	  ifconfig en0 | grep “inet” | cut -d ‘ ‘ -f 2                [nom du réseaux]
+	  ip addr show en0 | grep “inet” | cut -d’ ‘ -f6 | cut -d/ -f1
+
+	  ip a show en0: affiche les informations de tous les réseaux. Raccourci pour ip address show en0.
+
+	  grep “inet” : filtre la ligne contenant “inet” et l’affiche
+
+-A 1: option pour afficher également 1 ligne(s) suivante(s)
+	Pour rappel:
+	-B 3: option pour afficher également 3 ligne(s) précédente(s)
+-v : inverse la sélection (n’affiche donc que les lignes ne contenant PAS “...“)
+
+	cut: couper une partie du mot/fichier
+	-d’ ‘ : utilise [ESP] comme délimiteur de coupe
+	-f6 : coupe le 6e champ : cad les caractères entre la 5e et la 6e occurrence du délimiteur (permet de sauter tous les espaces jusqu’à l’IP dans notre cas)
+-d/ : utilise ‘/’ comme délimiteur de coupe (pour ne garder que la partie IP qui nous intéresse, avant le ‘/’)
+
+	Autre possibilité:
+	networksetup -getinfo Ethernet
+
+	03 Afficher juste l’adresse MAC de la carte Wi-Fi :
+
+	ifconfig en1 | grep “ether” | cut -d ’ ‘ -f 2
+	ifconfig en1 | awk ‘/ether/{print $2}’
+
+	Autre possibilité :
+	networksetup -getmacaddress Wi-Fi
+
+	04 Afficher la gateway par défaut dans la table de routage :
+
+	netstat -nr | grep “default” | head -1 | cut -d ‘ ‘ -f 13
+	(netstat -r -n | grep -A2 Internet:)?
+	route -n get default | grep gateway
+	netstat -nr | awk '/default/{print $2}' | head -1
+
+	-n: montre les adresses réseaux comme des nombres. Ex: e1r13p6.42.fr -> 10.11.13.6
+	Permet également de gagner pas mal de temps car normalement netstat interprète les adresses et tente de les afficher “symboliquement”.
+	-r : montre la table de routage. Si utilisé avec le flag -s, montre les statistiques de routage. Voir Routing Table Display.
+
+	head -1: supprime une ligne depuis le résultat de grep.
+
+	Autre possibilité :
+	route get default
+
+	05 Afficher l’IP du serveur DNS qui répond sur le domaine suivant : slash16.org
+
+	nslookup slash16.org | grep “Server” | cut -f 3
+
+	Autre possibilité :
+	dig slash16.org | grep “SERVER”
+
+	06 Récupérer le path complet du fichier dans lequel est écrit l’adresse IP du serveur DNS que l’on utilise :
+
+	echo “/etc/resolv.conf”
+
+	source: https://wiki.archlinux.fr/resolv.conf
+
+	Autre possibilité:
+	cat /var/run/resolv.conf
+# Deduction
+# etc/resolv.conf contains the IP address of the used DNS server
+# However ‘ls -l etc/resolv.conf’ will produce the following output:
+# lrwxr-xr-x  1 root  wheel  22 Nov 20  2016 /etc/resolv.conf -> ../var/run/resolv.conf
+# which is a symbolic link.
+07 Interroger un serveur DNS externe sur le nom de domaine slash16.org (ex : google 8.8.8.8)
+
+	nslookup slash16.org 8.8.8.8
+
+	08 Trouver chez quel hébergeur est le site de Slash16
+
+	whois slash16.org | grep “Server”
+	echo -e “\nAWSDNS -> AWS DNS -> “Amazon Web Services” ou encore “Amazon Route 53"”
+
+	09 Trouver l’IP Publique de 42.fr
+
+	nslookup 42.fr
+	/!\ ne donne pas l’IP publique mais interne de 42.fr (car on est dessus) ! /!\
+		ex:10.52.1.76
+
+		Pour avoir l’IP publique, il faut passer par le DNS Google :
+		nslookup 42.fr 8.8.8.8
+		ex: 163.172.250.12
+
+		/!\ le sujet demande la sortie de commande ! /!\
+			nslookup 42.fr 8.8.8.8 > 09
+			chmod 777 09
+			cat 09
+
+			10 Afficher les différents appareils réseaux entre votre poste et le domaine slash16.org
+
+			traceroute slash16.org
+
+			Ps: il est normal que la commande soit longue à se terminer !
+
+			11 Trouvez grâce au résultat de la commande précédente le nom et l’IP du matériel qui fait le lien entre vous (réseau local) et l’extérieur
+
+nat-1 (10.60.1.11)
+
+	echo -e “10.11.254.254 is our local network\n”
+	echo -e “the link between the l.n. and outside world is made by a device called NAT, for Network Address Translation\n”
+	echo -e “following the traceroute command, the line 2 represents the device used after the local network\n”
+	echo -e “in our case, the name device is “nat-1" and its IP Address is (10.60.1.11)\n”
+
+	source: https://fr.wikipedia.org/wiki/Network_address_translation
+
+	12 Vérifiez que le serveur avec l’adresse IP 10.51.1.253 est touchable depuis votre poste
+
+	ping 10.51.1.253
+
+	X Déterminer le type de serveur 10.51.1.253
+
+	host 10.51.1.253
+# DNS server is DHCP.
+# source
+# https://www.cyberciti.biz/faq/how-to-find-out-what-my-dns-servers-address-is
+
+	$ nslookup 10.51.1.253
+	Server:         10.51.1.42
+	Address:        10.51.1.42#53
+	Non-authoritative answer:
+	253.1.51.10.in-addr.arpa        name = dhcp.42.fr.
+	Authoritative answers can be found from:
+	C’est donc un serveur DHCP (qui délivre des adresses IP aux ordinateurs qui se connectent au réseau).
+
+	DHCP
+# DHCP, Dynamic Host Configuration Protocol, is a client/server protocol that automatically provides an Internet Protocol (IP) host with its IP address and other related configuration information such as the subnet mask and default gateway
+
+	13 Vérifiez grâce au Reverse DNS le nom du serveur correspondant à l’IP 10.51.1.81
+
+	nslookup 10.51.1.81 | grep “name” | cut -d ‘=’ -f 2 | sed ‘s/.$//’
+(host 10.51.1.81)
+
+	echo “ldap-proxy.42.fr”
+
+
+Nom de domaine -> IP = DNS DIRECT (cas courant pour l’utilisateur lambda)
+	IP -> Nom de domaine = DNS INVERSÉ
+
+	sed ‘s(ubstitute)/search/replacestring/’
+	The ‘.’ indicates any character, and the $ the end of the line. So .$ will remove the last character only.
+
+	/!\ le sujet demande la sortie de commande ! /!\
+		nslookup 10.51.1.81 | grep “name” | cut -d ‘=’ -f 2 | sed ‘s/.$//’ > 13
+		chmod 777 13
+		cat 13
+
+		14 Quel est le fichier contenant les entrées locales DNS ?
+
+		echo “/etc/hosts”
+
+
+		Source:
+http://www.linux-france.org/article/sys/lame/html/x1016.html
+
+15 Faites pointer intra.42.fr sur l’adresse suivante 46.19.122.85
+
+46.19.122.85    intra.42.fr
+#Add this to /etc/hosts
+
+echo -e “add \“46.19.122.85    intra.42.fr\” to the file /etc/hosts (need admin. rights)”
+sudo echo “46.19.122.85        intra.42.fr” >> /etc/hosts
+
+System
+
+01 Fichier où se trouve la version installée de Debian :
+echo “/etc/debian_version”
+Dans notre cas: 9.5
+
+Source : https://www.system-linux.eu/index.php?post/2009/02/14/Connaitre-sa-version-de-Debian-ou-Ubuntu
+
+Pour l’OS:
+/etc/issue
+
+Commandes similaires :
+hostnamectl
+lsb_release -a
+
+02 Commande pour connaître le nom du système :
+hostname
+Dans notre cas : Debian-42
+Wikipedia
+Network address translation
+En réseau informatique, on dit qu'un routeur fait du network address translation (NAT) (« traduction d'adresse réseau » ou « translation d'adresse réseau ») lorsqu'il fait correspondre des adresses IP à d'autres adresses IP. En particulier, un cas courant est de permettre à des machines disposant d'adresses qui font partie d'un intranet et ne sont ni uniques ni routables à l'échelle d'Internet, de communiquer avec le reste d'Internet en semblant utiliser des adresses externes uniques et routables. 
+Ainsi, il est possible de faire correspondre une seule adresse externe publique visible sur Internet à toutes les adresses d'un réseau privé, afin de pallier l'épuisement des adresses IPv4.
+La fonct… En afficher plus
+nixCraft
+How To Find Out What My DNS Servers Address Is - nixCraft
+How do I find out my DNS Server Addresses under Linux / UNIX / Windows operating system? What is my dns server IP address under Windows operating systems? Can you specify a list of public DNS server for personal use?
+24 janv. 2006
+https://www.cyberciti.biz/media/new/faq/2006/01/xp-ipconfig-command.jpg
+system-linux.eu
+Connaitre sa version de Debian ou Ubuntu - System-Linux
+Voila comment faire et en ligne de commande s'il vous plait Taper ceci dans un terminal : cat /etc/lsb-release Ca donne un truc comme ça : DISTRIB_ID=Ubuntu DISTRIB_RELEASE=8.04
+Commande pour renommer le système:
+hostname new-name
+
+03 Fichier pour renommer le système de façon permanente:
+echo “/etc/hostname”
+
+source: https://doc.ubuntu-fr.org/hosts
+04 Commande pour savoir depuis combien de temps le système à été démarré :
+uptime
+
+05 Commande qui détermine l’état du service SSH :
+	service ssh status
+(systemctl status sshd)
+	Ps: Installer le paquet sysvinit-utils pour installer “service” si celui ci n’est pas présent par défaut.
+	Si cela ne résout pas le soucis, alors ajouter la ligne “PATH=$PATH:/usr/sbin” dans le fichier de config .zshrc ou .bashrc (~/.zshrc).
+	Sinon tenter avec sudo.
+
+	06 Commande pour redémarrer le service SSH :
+	service ssh restart
+(systemctl restart sshd)
+
+	07 Déterminez le PID du service SSHD :
+	pgrep sshd
+(cat /var/run/sshd.pid)
+
+	source :
+https://www.commentcamarche.com/contents/1393-processus-et-pid
+
+08 Fichier qui contient les clés RSA des machines autorisées à se connecter via SSH :
+	echo “~/.ssh/authorized_keys”
+(cat ~/.ssh/id_rsa)
+
+	Source :
+https://www.ssh.com/ssh/authorized_keys/
+https://doc.fedora-fr.org/wiki/SSH_:_Authentification_par_clé
+
+Ps : Il peut être nécessaire de créer le dossier .ssh soit même :
+-> cd
+-> mkdir .ssh
+-> touch .ssh/authorized_keys
+-> chmod 700 .ssh
+-> chmod 600 .ssh/authorized_keys
+
+Fichier pour configurer SSHD :
+/etc/ssh/sshd_config
+
+09 Commande pour savoir quelles personnes sont connectées sur le système :
+who
+
+10 Commande qui permet de lister les tables de partitions des disques :
+	sudo fdisk -l
+(lsblk)
+
+	-l: list
+
+	11 Commande permet d’afficher l’espace disponible et utilisé sur le système d’une manière humainement compréhensible :
+df -h (--total)
+
+	-h, --human-readable
+	Ajoute à chaque valeur une  lettre  comme  M  pour
+	Méga-octet, afin d’améliorer la lisibilité.
+
+	12 Déterminez la taille exacte de chaque dossier de /var d’une manière humainement compréhensible suivi du chemin de celui-ci :
+	sudo du -sh /var/*
+					   (du -sh /var/* /var/)
+					   du -d1 -h /var
+
+					   -h, --human
+					   Afficher les tailles de manière facile à  lire  par
+					   un  humain,  en ajoutant un suffixe correspondant à
+					   l’unite (K, M, G)
+					   -s, --summarize
+					   Afficher seulement le total pour chaque argument.
+
+					   13 Commande qui permet, en temps réel, de trouver les processus en cours d’exécution :
+					   top
+
+					   Autre possibilité :
+					   gnome-system-monitor (version graphique plus élaborée)
+
+					   14 Lancez en background la commande tail -f /var/log/syslog :
+					   (su)
+					   sudo tail -f /var/log/syslog &
+
+					   Ps: En cas de problème pour afficher syslog (Permission refusée), passer full root (commande su) avant de lancer le script. Après, relancer le terminal pour sortir du mode SU.
+					   Sinon on peut l’ouvrir directement avec la commande sudo gedit /var/log/syslog.
+
+					   nohup au lieu de & pour garder le processus ouvert à la fermeture de la console.
+
+					   15 Commande qui permet de tuer le processus de la commande en background :
+					   sudo pkill tail
+					   kill %1 (dernier processus lance)
+					   (kill [pid])
+
+
+					   Ps: kill tail return “illegal pid: tail”
+					   You can also use jobs , with the job number. if you have same running processus you can chose the number the kill the one in question.
+
+					   16 Service qui permet de lancer des tâches à horaires régulières :
+					   echo “cron”
+
+					   Source:
+					   https://fr.wikipedia.org/wiki/Cron
+					   https://help.ubuntu.com/community/CronHowto
+
+					   cron est un service qui utilise des fichiers de type “crontab” pour lancer les tâches. Ces derniers sont configurable via la commande crontab.
+
+					   Ps: crontab -l pour afficher la liste des crontabs en cours et crontab -e pour les éditer.
+
+
+					   /etc/init.d/cron        start|stop|restart
+					   /etc/cron.hourly -> hourly tasks
+					   /etc/cron.daily -> daily tasks
+					   /etc/cron.weekly -> weekly tasks
+					   /etc/cron.monthly -> monthly tasks
+					   /etc/crontab -> tab of all planified tasks
+
+					   17 Commande qui donne la liste des règles de pare-feu :
+					   sudo iptables -L
+
+					   Source :
+					   https://doc.ubuntu-fr.org/iptables
+
+					   -L : list
+
+					   18 Autoriser uniquement les IPs provenant de 10.0.0.0/8 (entrante) à se connecter au système :
+					   sudo iptables -A INPUT -p all -s 10.0.0.0/8 -j ACCEPT
+
+					   -A, --append chaîne règle
+					   Ajoute une ou plusieurs règles à la fin de la chaîne sélectionnée. Lorsque les noms source et/ou destination désignent plus d’une adresse, une règle sera ajoutée pour chaque combinaison d’adresses possible.
+					   -P, --policy chaîne cible
+					   Configure le comportement par défaut (la stratégie) de la chaîne avec la cible fournie. Voir la section CIBLES pour connaître les cibles autorisées. Seules les chaînes prédéfinies (donc non définies par l’utilisateur) peuvent avoir un comportement par défaut, et ni les chaînes prédéfinies ni les chaînes définies par l’utilisateur ne peuvent être des cibles stratégiques.
+
+					   -p, --protocol [!] protocole
+					   Protocole de la règle ou du paquet à vérifier. Le protocole spécifié est l’un des suivants : tcp, udp, icmp ou all, ou bien sous forme d’une valeur numérique, représentant un de ces protocoles ou un protocole différent. Un nom de protocole issu du fichier /etc/protocols est aussi autorisé. Un «!» avant le protocole inverse le test. La valeur zéro est équivalente à all. Le protocole all correspond à tous les protocoles ; c’est aussi la valeur par défaut lorsque cette option est omise.
+	-s, --source [!] adresse[/masque]
+	Spécification de la source. L’adresse peut être un nom de réseau, un nom d’hôte (attention : spécifier un nom à résoudre avec une requête distante de type DNS est vraiment une mauvaise idée), une adresse de réseau IP (avec /masque) ou une simple adresse IP. Le masque peut être un masque de réseau ou un nombre entier spécifiant le nombre de bits égaux à 1 dans la partie gauche du masque de réseau (bits de poids fort). Par conséquent, un masque de 24 est équivalent à 255.255.255.0. Un «!» avant la spécification d’adresse inverse la sélection d’adresse. L’option --src est un synonyme de --source.
+	-j, --jump cible
+	Ceci détermine la cible de la règle ; c’est-à-dire ce qu’il faut faire si le paquet correspond à la règle. La cible peut être une chaîne définie par l’utilisateur (autre que celle dans laquelle se situe cette règle), une des cibles prédéfinies qui décide immédiatement du sort du paquet, ou une extension. Si cette option est omise dans une règle, la correspondance d’un paquet avec la règle n’aura aucun effet sur le sort du paquet, mais les compteurs seront incrémentés.
+
+	19 Interdire le reste des IP:
+	sudo iptables -A INPUT -j REJECT
+(iptables -P INPUT DROP)
+
+
+	As a general rule, use REJECT when you want the other end to know the port is unreachable’ use DROP for connections to hosts you don’t want people to see.
+	Usually, all rules for connections inside your LAN should use REJECT. For the Internet, With the exception of ident on certain servers, connections from the Internet are usually DROPPED.
+	When using DROP rules: - UDP packets will be dropped and the behavior will be the same as connecting to an unfirewalled port with no service. - TCP packets will return an ACK/RST which is the same response that an open port with no service on it will respond with. Some routers will respond with and ACK/RST on behalf of servers which are down.
+	When using REJECT rules an ICMP packet is sent indicating the port is unavailable.
+
+	DROP, c’est malpoli mais ça peut ralentir un peu le scan de ports, qui va perdre du temps à attendre des réponses. Si le but est de faire croire que la machine est absente, alors il faut le faire pour tout paquet entrant non lié à une connexion existante sinon ça va se voir. Mais il y a des moyens de savoir si une machine est présente même si elle ne répond pas aux paquets IP, en exploitant les réponses ARP (ou leur équivalent NDP en IPv6) ou l’absence de message d’erreur ICMP “destination unreachable”.
+	REJECT, c’est plus poli puisqu’il y a une réponse. Attention néanmoins : si on veut que ça ressemble à une réponse normale, il faut le spécifier explicitement pour certains protocoles avec l’option --reject-with. Par exemple la réponse par défaut (ICMP port unreachable) n’est pas celle renvoyée par un port TCP fermé, il faut renvoyer un TCP Reset. Et il y a des types de paquets pour lesquels il ne faut pas renvoyer de réponse sinon cela prouve qu’il y a un pare-feu.
+	La cible REJECT est une extension qui ne peut être utilisée que dans les règles. On ne peut pas l’utiliser comme politique par défaut avec -P, le choix est entre DROP et ACCEPT.
+
+	Pour supprimer une règle :
+	sudo iptables -D INPUT -p all -s 10.0.0.0/8 -j ACCEPT        [Spécification de la règle]
+	ou
+	sudo iptables -D INPUT 1 [Position de la règle dans la liste, la plus haute étant la numéro 1]
+
+	-D : Delete
+
+
+	Scripts
+
+	01 Réaliser un script qui affiche seulement le login, le UID et le Path de chaques entrée du fichier /etc/passwd :
+
+	Format du fichier passwd:
+	nom_du_compte : mot_de_passe : numéro_utilisateur : numéro_de_groupe
+	: commentaire : répertoire : programme_de_démarrage
+	Exemple :
+root:x:0:zéro:root:/root:/bin/bash
+
+	le nom du compte de l’utilisateur
+	le mot de passe de l’utilisateur (crypté bien sûr)
+	l’entier qui identifie l’utilisateur pour le système d’exploitation (UID=User ID, identifiant utilisateur)
+l’entier qui identifie le groupe de l’utilisateur (GID=Group ID, identifiant de groupe)
+	le commentaire dans lequel on peut retrouver des informations sur l’utilisateur ou simplement son nom réel
+	le répertoire de connexion qui est celui dans lequel il se trouve après s’être connecté au système
+la commande est celle exécutée après connexion au système (c’est fréquemment un interpréteur de commandes)
+
+#!/bin/bash
+	cat /etc/passwd | cut -d ‘:’ -f 1,3,6
+
+	Autre possibilité :
+	awk -F “:” ‘{print $1, $3, $6}’ /etc/passwd
+
+	02 Réaliser un script qui met à jour l’ensemble des sources de package, puis de vos packages et qui log l’ensemble dans un fichier nommé /var/log/update_script.log.
+	Créez une tâche planifiée pour ce script une fois par semaine à 4h00 du matin :
+
+#!/bin/bash
+	sudo apt-get update >> /var/log/update_script.log
+	sudo apt-get upgrade -y >> /var/log/update_script.log
+
+# to create the scheduled task (to do in a terminal, not inside the script):
+# it is recommanded to edit directly with sudo crontab -e
+# because the following method will make lose all previous tasks
+# echo “0 4 * * 1 /home/fdagbert/Documents/Init/02" > new_crontab
+# sudo crontab new_crontab
+# rm new_crontab
+# sudo crontab -l
+
+	-y: permet de répondre oui par avance aux demandes de confirmations. Utile pour une utilisation dans un script, par exemple.
+
+	crontab -l pour regarder le contenu
+	crontab -e pour éditer
+	crontab -r pour supprimer
+
+	Les champs du fichier crontab, dans l’ordre :
+	minute
+	heure
+	jours dans le mois
+	mois
+	jour de la semaine
+	nom d’utilisateur
+	(pour utiliser ses droits - facultatif - Ubuntu seulement)
+(Debian: sudo crontab -u root)
+	La commande à lancer
+
+	1 fichier crontab par utilisateur, le root possède également son propre crontab.
+	Le fichier crontab doit se terminer par une fin de ligne (automatique si on utile crontab -e et vim).
+
+	Le dossier /var n’étant pas accessible par un utilisateur, il faut avoir les droits root pour lancer le script. De même, apt-get nécessite les droits d’admin.
+
+	Le service Cron n’ayant pas la capacité de demander un mot de passe, utiliser sudo dans un crontab nécessiterait donc d’entrer son mdp en dure dans ce dernier, par ex: @weekly echo “password” | sudo apt-get upgrade. Ca se passe de commentaire...
+
+	La solution est donc de modifier le crontab du root directement au lieu d’en créer un nouveau pour l’utilisateur.
+	-> sudo crontab -e
+	Ainsi, toutes les actions seront bien effectué avec les droits d’admin sans demande de mot de passe. De même, il n’est pas nécessaires d’indiquer “root” directement dans le crontab.
+
+	Après avoir édité un fichier crontab, on peut vouloir relancer le service cron avec la commande “service cron restart” (en super-utilisateur/root) mais ce n’est pas obligatoire. Cron scrute chaque minute les répertoires /var/spool/cron et /var/spool/cron.d.
+
+	Si après test, il apparaît que la tâche ne se lance pas à l’heure prévu:
+	Vérifier les droits de chaques fichiers concernés par le script (ainsi que le script lui même), ne pas toucher aux droits du dossier /var et /log !
+	Vérifier que la commande sudo est présente lorsque nécessaire.
+Editer le crontab avec la commande “sudo crontab -e” et choisissez l’éditeur vim standard (changer l’éditeur par défaut sinon) puis quitter proprement (:wq)
+	Installer le (paquet) service de mail “postfix”: configurer en local seulement, le nom d’utilisateur: root
+	Activer les log de cron : vim /etc/rsyslog.conf
+	puis supprimer le ‘#’ de la ligne “#cron.*     /var/log/cron.log”
+(ubuntu: vim /etc/rsyslog.d/50-default.conf puis idem)
+	Redémarrer le service “rsyslog” : sudo service rsyslog restart
+	Après l’heure (ou la minute) prévu d’exécution de la tâche, vérifier les log de cron : sudo cat /var/log/cron.log
+Si à l’heure prévu, la ligne “CMD” apparaît, la tâche s’est bien lancé, le problème vient donc probablement du script (90 % des problèmes)
+	Dans ce cas la ligne “LIST” doit apparaître en dessous (sinon erreur NO MTA car postfix n’est pas installé): en effet, le système envoie un mail avec le rapport d’erreur au root à chaque erreur d’exécution de tâche planifié (script). Donc très pratique pour déboguer le script.
+																												 Dans notre configuration de postfix (local seulement) le mail est envoyé dans un fichier selon le nom donné à l’installation (root), sudo cat /var/mail/root
+
+																																																		 sudo cat /var/log/update_script.log
+
+																																																		 Source :
+https://doc.ubuntu-fr.org/apt-get
+https://doc.ubuntu-fr.org/cron
+https://askubuntu.com/questions/23009/why-crontab-scripts-are-not-working
+
+03 Réaliser un script qui affiche la liste des fichiers triés par taille présents dans le dossier passé en argument :
+
+#!/bin/bash
+ls -s $1 | sort -n
+
+-s :  --size
+Afficher  la  taille  de chaque fichier, mesurée en
+bloc de 1 Ko, à  gauche  du  nom.
+	-h : --human-readable
+Afficher la taille en format visible (ex: 1k, 234M ou 4G), ne pas l’utiliser car cela fausse le trie ! (Tester avec un dossier contenant des fichier de 1 à 2 M et d’autres de 1 à 4 K, ex: /var)
+
+	$1 : argument en position 1
+	ex: ./script.sh Hello World
+	$0 = script.sh
+	$1 = Hello
+	$2 = World
+
+	-n : Comparer  suivant  la  valeur  arithmétique.
+
+	Autre possibilité :
+	du -d1 $1 | sort -n
+
+	-d[NIVEAU] : profondeur maximale
+	Afficher l’espace total occupé par un répertoire (ou un fichier avec l’option --all) seulement s’il est situé à une profondeur inférieur ou égale à [NIVEAU]. -d0 est équivalent à --summarize.
+
+	04 Réaliser un script qui permet de surveiller les modifications du fichier /etc/crontab et envoie un mail à ROOT si celui-ci a été modifié.
+	Créez une tâche planifiée pour ce script tous les jours à minuit :
+
+#!/bin/bash
+	CTAB=‘/var/spool/cron/crontabs/root’
+	CTAB_LAST=‘/etc/.crontab_last’
+	if [ ! -e $CTAB_LAST ]; then
+	sudo cp $CTAB $CTAB_LAST
+	fi
+	MD5_CTAB =`md5sum $CTAB | cut -d' ' -f1`
+	MD5_LAST =`md5sum $CTAB | cut -d\' \' -f1`
+	if [ “$MD5_CTAB” != “MD5_LAST” ]; then
+	sudo cat $CTAB | mail -s “Crontab has been modified” root@localhost
+	sudo cp $CTAB $CTAB_LAST
+	fi
+# to create the scheduled task :
+# use “sudo crontab -e” then add the following line:
+# 0 0 * * * /home/fdagbert/Documents/Init/04
+
+	! : expression est fausse
+	-e : le fichier existe
+	` (backquote) permet de lancer des instructions,
+	ex:echo “$USER `sudo cat $CTAB`”
+
+	sudo cat /var/mail/root
+
+	Sources:
+	Ask Ubuntu
+	Why crontab scripts are not working?
+	Often, crontab scripts are not executed on schedule or as expected. There are numerous reasons for that: wrong crontab notation permissions problem environment variables This community wiki aims to
+	https://openclassrooms.com/fr/courses/43538-reprenez-le-controle-a-laide-de-linux/43126-afficher-et-manipuler-des-variables
+https://askubuntu.com/questions/216692/where-is-the-user-crontab-stored
+https://postfix.traduc.org/index.php/STANDARD_CONFIGURATION_README.html
+
+
+
+05 Réaliser un script qui affiche 42 :
+
+echo “42"
+
+Autre possibilité :
+#!/bin/bash
+echo ”
+:::      ::::::::
+:+:      :+:    :+:
++:+ +:+         +:+
++#+  +:+       +#+
++#+#+#+#+#+#+#+
+#+#    #+#
+###   #########
+”
+OpenClassrooms
+Afficher et manipuler des variables
+Linux est un système d'exploitation qui fait tourner les programmes de votre machine, à l'instar de Windows et Mac OS X. Créé par des communautés de passionnés d'informatique, il vous donne un contrôle sans précédent sur votre machine... et il est gratuit !
+Ask Ubuntu
+Where is the user crontab stored?
+Since upgrading my user's crontab has been wiped out. This is not the first time this has happened this year and it's a pain restoring it each time. I'd like to be able to back up the crontab for my
+postfix.traduc.org
+Exemples de configuration standard de Postfix
+Exemples de configuration standard de Postfix

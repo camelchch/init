@@ -1,1 +1,2 @@
-sudo iptables -A INPUT -j REJECT
+sudo service --status-all | grep +
+#this kind of service named daemon
