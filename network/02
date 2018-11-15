@@ -1,1 +1,3 @@
-networksetup -getinfo Ethernet
+ifconfig en0
+
+arp -a
