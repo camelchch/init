@@ -1,0 +1,10 @@
+#!/bin/bash
+#need to install watch (brew install watch) before
+#LEAKS_CHECKER
+#USAGE: sh name_of_the_script [-c] ProgName
+# -c: do not clear terminal while checking
+if [ $1 = "-c" ]; then
+	    while true; do leaks $2; sleep 1; done
+	else
+		    watch -n 1 leaks $1
+		fi
